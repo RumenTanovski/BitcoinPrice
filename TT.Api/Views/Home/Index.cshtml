@@ -1,0 +1,166 @@
+﻿@using TT.Api.Model
+@{
+    ViewData["Title"] = "Home";
+    var coins = ViewBag.Coins as List<CoinModel>;
+
+    var totalInitialPrice = ViewBag.TotalInitialPrice ?? 0;
+    var totalNewPrice = (ViewBag.TotalNewPrice ?? 0);
+    var changeInPrice = totalNewPrice - totalInitialPrice;
+    var changeInPercentage = totalInitialPrice == 0 ? 0 :( ((totalNewPrice - totalInitialPrice) / totalInitialPrice) * 100  );
+    ;
+}
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body id="body">
+<h2 style="background:red; width:200">Upload File Please:</h2>
+<form asp-action="Upload" enctype="multipart/form-data" method="post">
+    <div>
+        <input type="file" name="uploadedFile" />
+        <input type="submit" value="Upload" />
+    </div>
+</form>
+
+<hr />
+
+<h3 style="background:red; width:320"> Configure  - update period: </h3>
+
+<form>
+    <label>
+        <input type="radio" name="refreshInterval" value="60000" onclick="setChoice(this.value)">
+        1 minute
+    </label><br>
+
+    <label>
+        <input type="radio" name="refreshInterval" value="300000" onclick="setChoice(this.value)">
+        5 minutes
+    </label><br>
+
+    <label>
+        <input type="radio" name="refreshInterval" value="3600000" onclick="setChoice(this.value)">
+        1 hours
+    </label><br>    
+</form>
+
+<hr />
+
+
+<h3 style="background:red;">Initial portfolio value</h3>
+<div>
+    <p>Initial total amount of the wallet: $@(totalInitialPrice)</p>
+</div>
+<hr />
+
+
+<h3 style="background:red;">Change for each COIN in percentage </h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Coin</th>
+            <th>Number of coin</th>
+            <th>Initial price</th>
+            <th>Total initial price</th>
+            <th>New price</th>
+            <th>Total new price</th>
+            <th>Change percentage</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (coins != null)
+        {
+            foreach (var coin in coins)
+            {
+                <tr>
+                    <td>@coin.Name</td>
+                    <td>@coin.NumCoin</td>
+                    <td>@coin.InitialPriceCoin</td>
+                    <td>@(coin.NumCoin * coin.InitialPriceCoin) </td>
+                    <td>@coin.NewPriceCoin</td>
+                    <td>@(coin.NumCoin * coin.NewPriceCoin)</td>
+                        <td>@String.Format("{0:0.000000000000000000000000000000000000}", ((coin.NewPriceCoin - coin.InitialPriceCoin) / coin.InitialPriceCoin) * 100) %</td>
+                </tr>
+            }
+        }
+        <tr>
+            <th>Total:</th>
+            <td></td>
+            <td></td>
+            <td>@(totalInitialPrice ?? 0)</td>
+            <td></td>
+            <td>@(totalNewPrice ?? 0)</td>
+                <td>@(String.Format("{0:0.000000000000000000000000000000000000}", changeInPercentage) ?? 0) %</td>
+        </tr>
+    </tbody>
+</table>
+
+
+<h3 style="background:red;">Change in overall portfolio</h3>
+<div>
+    <p>Change in Price: @(changeInPrice ?? 0)</p>
+        <p>Change in percentage: @(String.Format("{0:0.000000000000000000000000000000000000}", changeInPercentage) ?? 0) %</p>
+</div>
+    <hr />
+</body>
+</html>
+<script>
+    window.onload = function () {
+        let savedChoice = localStorage.getItem("selectedChoice"); // Извличаме избора от localStorage
+        if (savedChoice) {
+            debugger;
+            let radioButton = document.querySelector(`input[name="refreshInterval"][value="${savedChoice}"]`);
+            if (radioButton) {
+                radioButton.checked = true; // Задаваме отметка на запазения избор
+                debugger;
+            }
+        }
+
+        let refreshInterval = localStorage.getItem("selectedChoice");
+
+        debugger;
+
+        function refreshPage() {
+            var formData = new FormData();
+
+            $.ajax({
+                type: 'POST',
+                url: '/home/',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (result) {
+                    debugger;
+                    $('#body').html(result);
+                    debugger;
+                    setTimeout(function () {
+                        let savedChoiceA = localStorage.getItem("selectedChoice");
+                        if (savedChoiceA) {
+                            let radioButtonA = document.querySelector(`input[name="refreshInterval"][value="${savedChoiceA}"]`);
+                            if (radioButtonA) {
+                                radioButtonA.checked = true;
+                            }
+                        }
+                    }, 500);
+
+                },
+                async: true,
+                error: function (result) {
+                    if (result.status === 404) {
+                    }
+                }
+            });
+        }
+
+
+
+        setInterval(refreshPage, refreshInterval);
+
+    };
+
+    function setChoice(value) {
+        debugger;
+        localStorage.setItem("selectedChoice", value); // Записваме избора в localStorage
+    }
+
+</script>
+
